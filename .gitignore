@@ -73,7 +73,7 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-#MONGO_URI=mongodb://localhost:27017/coder_cars
+#MONGO_URI=https://phuongcodercars.herokuapp.com/cars
 .env
 .env.development.local
 .env.test.local
