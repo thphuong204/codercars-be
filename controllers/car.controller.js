@@ -47,14 +47,14 @@ carController.getCars = async (req, res, next) => {
 };
 
 carController.editCar = async (req, res, next) => {
-	const targetId = null;
-	const updateInfo = "";
+	const targetId = req.params.id;
+	const updateInfo = req.body
 	const options = { new: true };
 
 	try {
 		// YOUR CODE HERE
 		const updated = await Car.findByIdAndUpdate(targetId, updateInfo, options);
-
+		console.log("updated",updated);
 		sendResponse(
 		res,
 		200,
@@ -70,11 +70,11 @@ carController.editCar = async (req, res, next) => {
 };
 
 carController.deleteCar = async (req, res, next) => {
-	const targetId = null;
+	const targetId = req.params.id;
 	const options = { new: true };
 	try {
 		// YOUR CODE HERE
-		const updated = await car.findByIdAndDelete(targetId, options);
+		const updated = await Car.findByIdAndDelete(targetId, options);
 
 		sendResponse(
 		res,
