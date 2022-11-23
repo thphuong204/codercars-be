@@ -51,7 +51,7 @@ carController.getCars = async (req, res, next) => {
 	const currentPage = req.query.page || 1;
 	const limitPerPage = 20;
 	const skipNumber = (currentPage-1) * limitPerPage;
-	const filter = {};
+	const filter = {isDeleted: false};
 	try {
 		// YOUR CODE HERE
     	const listOfFound = await Car.find(filter).skip(skipNumber).limit(limitPerPage);
@@ -97,21 +97,21 @@ carController.editCar = async (req, res, next) => {
 
 		const targetId = req.params.id;
 		const options = { new: true };
-		
 
-		Car.findByIdAndUpdate(
-			targetId, 
+	
+		Car.findOneAndUpdate(
+			{_id: targetId, isDeleted: false}, 
 			{	make: make,
 				model: model,
 				release_date : release_date, 
 				transmission_type: transmission_type, 
 				size: size, 
 				style: style, 
-				price: price,
+				price: price
 			}, 
 			options,
 			// handle error if can't find id
-			(err, updatedCar) => {
+			(err, car) => {
 				if (err) {
                     res.status(400)
 					res.json({
@@ -121,15 +121,24 @@ carController.editCar = async (req, res, next) => {
 					return
 				};
 
+				if (!car) {
+					res.status(404)
+					res.json({
+						success: false,
+						err: {message: `Can't update data of car which does not exist`}
+					})
+					return
+				};
+
 				sendResponse(
 					res,
 					200,
 					true,
-					{ car: updatedCar },
+					{ car: car },
 					null,
 					"Update Car Successfully!"
-				);
-			}
+				)
+			},
 		);
 		
 	} catch (err) {
@@ -143,7 +152,10 @@ carController.deleteCar = async (req, res, next) => {
 	const options = { new: true };
 	try {
 		// YOUR CODE HERE
-		Car.findByIdAndDelete(targetId, options,
+		Car.findOneAndUpdate(
+			{_id: targetId, isDeleted: false}, 
+			{isDeleted: true},
+			options,
 			// handle error if can't find id 
 			(err, car) => {
 			if (err) {
@@ -151,6 +163,15 @@ carController.deleteCar = async (req, res, next) => {
 				res.json({
 					success: false,
 					err
+				})
+				return
+			};
+
+			if (!car) {
+				res.status(404)
+				res.json({
+					success: false,
+					err: {message : `Can't delete data of car which does not exist`}
 				})
 				return
 			};
