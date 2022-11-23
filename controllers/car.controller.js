@@ -3,15 +3,41 @@ const { sendResponse, AppError}=require("../helpers/utils.js");
 const { db } = require('../models/Car');
 const Car = require('../models/Car');
 const carController = {};
+const { validationResult } = require('express-validator');
+
+// check('make').not().isEmpty()
 
 carController.createCar = async (req, res, next) => {
 	try {
 		// YOUR CODE HERE
-		const info = req.body;
 
-		if(!info) throw new AppError(402,"Bad Request","Create Car Error")
+		//Express validation, check information before creating a new document
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			res.status(422).json({ errors: errors.array() });
+			return;
+		}
+		
+		const {
+			make,
+			 model, 
+			 release_date, 
+			 transmission_type, 
+			 size, 
+			 style, 
+			 price
+		} = req.body;
+
         //mongoose query
-        const created= await Car.create(info)
+        const created= await Car.create({
+			make: make,
+			model: model,
+			release_date : release_date, 
+			transmission_type: transmission_type, 
+			size: size, 
+			style: style, 
+			price: price,
+		})
         sendResponse(res,200,true,{data:created},null,"Create Car Success")
 	
 	} catch (err) {
@@ -21,6 +47,7 @@ carController.createCar = async (req, res, next) => {
 };
 
 carController.getCars = async (req, res, next) => {
+	console.log("req",req)
 	const currentPage = req.query.page || 1;
 	const limitPerPage = 20;
 	const skipNumber = (currentPage-1) * limitPerPage;
@@ -47,22 +74,64 @@ carController.getCars = async (req, res, next) => {
 };
 
 carController.editCar = async (req, res, next) => {
-	const targetId = req.params.id;
-	const updateInfo = req.body
-	const options = { new: true };
 
 	try {
 		// YOUR CODE HERE
-		const updated = await Car.findByIdAndUpdate(targetId, updateInfo, options);
-		console.log("updated",updated);
-		sendResponse(
-		res,
-		200,
-		true,
-		{ cars: updated },
-		null,
-		"Update Car Successfully!"
+
+		//Express validation, check information before editting a document
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			res.status(422).json({ errors: errors.array() });
+			return;
+		}
+
+		const {
+			make,
+			model, 
+			release_date, 
+			transmission_type, 
+			size, 
+			style, 
+			price
+		} = req.body;
+
+		const targetId = req.params.id;
+		const options = { new: true };
+		
+
+		Car.findByIdAndUpdate(
+			targetId, 
+			{	make: make,
+				model: model,
+				release_date : release_date, 
+				transmission_type: transmission_type, 
+				size: size, 
+				style: style, 
+				price: price,
+			}, 
+			options,
+			// handle error if can't find id
+			(err, updatedCar) => {
+				if (err) {
+                    res.status(400)
+					res.json({
+						success: false,
+						err
+					})
+					return
+				};
+
+				sendResponse(
+					res,
+					200,
+					true,
+					{ car: updatedCar },
+					null,
+					"Update Car Successfully!"
+				);
+			}
 		);
+		
 	} catch (err) {
 		// YOUR CODE HERE
 		next(err);
@@ -74,16 +143,29 @@ carController.deleteCar = async (req, res, next) => {
 	const options = { new: true };
 	try {
 		// YOUR CODE HERE
-		const updated = await Car.findByIdAndDelete(targetId, options);
+		Car.findByIdAndDelete(targetId, options,
+			// handle error if can't find id 
+			(err, car) => {
+			if (err) {
+				res.status(400)
+				res.json({
+					success: false,
+					err
+				})
+				return
+			};
 
-		sendResponse(
-		res,
-		200,
-		true,
-		{ cars: updated },
-		null,
-		"Delete Car Successfully!"
+			sendResponse(
+				res,
+				200,
+				true,
+				{ car: car },
+				null,
+				"Delete Car Successfully!"
+			);
+		}
 		);
+
 	} catch (err) {
 		// YOUR CODE HERE
 		next(err);
